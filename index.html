@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VR Game - Сбор объектов</title>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/deltaluca/aframe-physics-system/dist/aframe-physics-system.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <a-scene physics="gravity: -9.8">
+        <!-- Небо -->
+        <a-sky src=/QQQ/sky_texture.jpg></a-sky>
+
+        <!-- Пол -->
+        <a-plane position="0 0 -10" rotation="-90 0 0" width="100" height="100" color="#7BC8A4" static-body></a-plane>
+
+        <!-- Камера с контроллерами -->
+        <a-camera id="camera" position="0 1.6 5" dynamic-body></a-camera>
+
+        <!-- Контроллеры -->
+        <a-entity id="left-hand" oculus-touch-controls="hand: left"></a-entity>
+        <a-entity id="right-hand" oculus-touch-controls="hand: right"></a-entity>
+
+        <!-- Объекты для сбора -->
+        <a-sphere position="2 1 -5" radius="1" color="red" class="collectible" dynamic-body></a-sphere>
+        <a-sphere position="-3 1 -7" radius="1" color="blue" class="collectible" dynamic-body></a-sphere>
+        <a-sphere position="1 1 -10" radius="1" color="green" class="collectible" dynamic-body></a-sphere>
+
+        <!-- Таймер -->
+        <a-entity id="timer" position="-4 4 -5" text="value: Time: 30; color: black; align: center; width: 10;"></a-entity>
+
+        <!-- Счет -->
+        <a-entity id="score" position="0 4 -5" text="value: Score: 0; color: black; align: center; width: 10;"></a-entity>
+
+        <!-- 3D модель -->
+        <a-entity gltf-model="url(model.glb)" position="0 2 -10" scale="2 2 2"></a-entity>
+    </a-scene>
+
+    <script>
+        // Инициализация переменных
+        let score = 0;
+        let timeLeft = 30;
+
+        // Функция обновления счета
+        function updateScore() {
+            score++;
+            document.querySelector('#score').setAttribute('text', 'value', `Score: ${score}`);
+        }
+
+        // Функция обновления таймера
+        setInterval(() => {
+            if (timeLeft > 0) {
+                timeLeft--;
+                document.querySelector('#timer').setAttribute('text', 'value', `Time: ${timeLeft}`);
+            } else {
+                endGame();
+            }
+        }, 1000);
+
+        // Функция окончания игры
+        function endGame() {
+            alert(`Игра завершена! Ваш финальный счет: ${score}`);
+            location.reload(); // Перезапуск игры
+        }
+
+        // Регистрация компонента для сбора объектов
+        AFRAME.registerComponent('collectible', {
+            init: function () {
+                // Добавляем событие на коллизию с камерой
+                this.el.addEventListener('collide', (e) => {
+                    if (e.detail.body.el.id === 'camera') {
+                        // Объект собран
+                        this.el.setAttribute('visible', 'false');  // Прячем объект
+                        updateScore();  // Увеличиваем счет
+                    }
+                });
+            }
+        });
+
+        // Функция для создания объектов
+        function createCollectibles() {
+            const scene = document.querySelector('a-scene');
+            const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
+
+            for (let i = 0; i < 5; i++) {
+                const sphere = document.createElement('a-sphere');
+                const color = colors[i % colors.length];
+
+                sphere.setAttribute('position', { x: Math.random() * 20 - 10, y: 1, z: Math.random() * 20 - 10 });
+                sphere.setAttribute('radius', '1');
+                sphere.setAttribute('color', color);
+                sphere.setAttribute('class', 'collectible');
+                sphere.setAttribute('collectible', '');  // Включаем компонент сбора
+                sphere.setAttribute('dynamic-body', '');  // Добавляем физику для объекта
+
+                scene.appendChild(sphere);
+            }
+        }
+
+        // Создаем объекты для сбора
+        createCollectibles();
+    </script>
+</body>
+</html>
